@@ -22,7 +22,6 @@ public class ComentariosController {
 	ComentariosRepository comentariostable;
 	
 	@PostMapping("/getComentario")
-
 	public List<Comentarios> getComentario(@RequestBody Comentarios idComentario){
 		List<Comentarios> listaComentarios = comentariostable.findByTarea(idComentario.getId_tarea());
 		return listaComentarios;
@@ -30,57 +29,46 @@ public class ComentariosController {
 	
 	@GetMapping("/buscarComentario")
 	public Comentarios getComentario(@RequestParam int id) {
-		
 		Comentarios buscar = new Comentarios();
 		Optional<Comentarios> comentario = comentariostable.findById(id);
 		if(comentario.isPresent()) {
 			buscar = comentario.get();
 		}
-		
 		return buscar;
 	}
 	
 	@PostMapping("/addComentario")
 	public int addComentario(@RequestBody Comentarios comentario) {
-		
 		int flag = 0;
 		if(comentario != null) {
+			if (comentario.getFecha_hora() != null && comentario.getFecha_hora().trim().isEmpty()) {
+				comentario.setFecha_hora(null);
+			}
 			comentariostable.save(comentario);
 			flag = 1;
 		}
-		
-		return flag;
-	}
-	
-	@PostMapping("/updateComentario")
-	public int updateComentario(@RequestBody Comentarios comentario) {
-		
-		int flag = 0;
-		if(comentario != null) {
-			comentariostable.save(comentario);
-			flag = 1;
-		}
-		
 		return flag;
 	}
 	
 	@DeleteMapping("/deleteComentario")
 	public int deleteComentario(@RequestBody Comentarios comentario) {
-		
 		int flag = 0;
 		if(comentario != null) {
-			comentariostable.delete(comentario);
-			flag = 1;
+			if (comentario.getId_comentario() != null && comentario.getId_comentario() != 0) {
+				comentariostable.deleteById(comentario.getId_comentario());
+				flag = 1;
+			} else {
+				comentariostable.delete(comentario);
+				flag = 1;
+			}
 		}
-		
 		return flag;
 	}
 	
 	@PostMapping("/buscarComentarios")
 	public List<Comentarios> getComentarios(){
-		
 		List<Comentarios> listaComentarios = new ArrayList<>();
-		comentariostable.findAll().forEach(listaComentarios :: add);
+		comentariostable.findAll().forEach(listaComentarios::add);
 		return listaComentarios;
 	}
 

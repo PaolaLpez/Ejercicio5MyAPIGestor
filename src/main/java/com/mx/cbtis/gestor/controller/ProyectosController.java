@@ -21,73 +21,59 @@ public class ProyectosController {
 	@Autowired 
 	ProtectosRepository proyectostable;
 	
-	/*@PostMapping("/buscarProyecto")
-	public Proyectos getProyecto(@RequestBody Proyectos proyecto) {
-		
-		Proyectos buscar = new Proyectos();
-		Optional<Proyectos> proyectos = proyectostable.findById(proyecto.getId_proyecto());
-		if(proyectos.isPresent()) {
-			buscar = proyectos.get();
-		}
-		
-		return buscar;
-	}*/
-	
 	@GetMapping("/buscarProyecto")
 	public Proyectos getProyecto(@RequestParam int id_proyecto) {
-		
 		Proyectos buscar = new Proyectos();
 		Optional<Proyectos> proyecto = proyectostable.findById(id_proyecto);
 		if(proyecto.isPresent()) {
 			buscar = proyecto.get();
 		}
-		
 		return buscar;
 	}
 	
 	@PostMapping("/addProyecto")
 	public int addProyecto(@RequestBody Proyectos proyecto) {
-		
 		int flag = 0;
 		if(proyecto != null) {
-			
+			if (proyecto.getFecha_inicio() != null && proyecto.getFecha_inicio().trim().isEmpty()) {
+				proyecto.setFecha_inicio(null);
+			}
+			if (proyecto.getFecha_finalizacion() != null && proyecto.getFecha_finalizacion().trim().isEmpty()) {
+				proyecto.setFecha_finalizacion(null);
+			}
+			if (proyecto.getDescripcion() != null && proyecto.getDescripcion().length() > 100) {
+				proyecto.setDescripcion(proyecto.getDescripcion().substring(0, 100));
+			}
 			proyectostable.save(proyecto);
 			flag = 1;
 		}
-		
+		return flag;
+	}
+	
+	@PostMapping("/buscarProyectos")
+	public List<Proyectos> getProyectos(){
+		List<Proyectos> listaProyectos = new ArrayList<>();
+		proyectostable.findAll().forEach(listaProyectos::add);
+		return listaProyectos;
+	}
+	
+	@DeleteMapping("/deleteProyecto")
+	public int deleteProyecto(@RequestBody Proyectos proyecto) {
+		int flag = 0;
+		if(proyecto != null) {
+			if (proyecto.getId_proyecto() != null && proyecto.getId_proyecto() != 0) {
+				proyectostable.deleteById(proyecto.getId_proyecto());
+				flag = 1;
+			} else if (proyecto.getNombre() != null) {
+				proyectostable.delete(proyecto);
+				flag = 1;
+			}
+		}
 		return flag;
 	}
 	
 	@PostMapping("/updateProyecto")
 	public int updateProyecto(@RequestBody Proyectos proyecto) {
-		
-		int flag = 0;
-		if(proyecto != null) {
-			proyectostable.save(proyecto);
-			flag = 1;
-		}
-		
-		return flag;
+		return addProyecto(proyecto);
 	}
-	
-	@DeleteMapping("/deleteProyecto")
-	public int deleteProyecto(@RequestBody Proyectos proyecto) {
-		
-		int flag = 0;
-		if(proyecto != null) {
-			proyectostable.delete(proyecto);
-			flag = 1;
-		}
-		
-		return flag;
-	}   
-	
-	@PostMapping("/buscarProyectos")
-	public List<Proyectos> getProyectos(){
-		
-		List<Proyectos> listaProyectos = new ArrayList<>();
-		proyectostable.findAll().forEach(listaProyectos :: add);
-		return listaProyectos;
-	}
-
 }
