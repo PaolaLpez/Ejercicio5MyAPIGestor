@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:11.3
+    container_name: dbgestor_mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dbgestor
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./dump-dbgestor-202406261453.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - red-admin-proyectos
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./Ejercicio5MyAPIGestor
+      dockerfile: Dockerfile
+    container_name: api_gestor
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/dbgestor
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - red-admin-proyectos
+
+  frontend:
+    build:
+      context: ./Ejercicio5Cliente
+      dockerfile: Dockerfile
+    container_name: cliente_gestor
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+    depends_on:
+      - backend
+    networks:
+      - red-admin-proyectos
+
+  netdata:
+    image: netdata/netdata:latest
+    container_name: netdata_monitor
+    restart: unless-stopped
+    ports:
+      - "19999:19999"
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - red-admin-proyectos
+
+networks:
+  red-admin-proyectos:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+    driver: local

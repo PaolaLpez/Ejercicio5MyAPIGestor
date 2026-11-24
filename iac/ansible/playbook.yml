@@ -1,0 +1,47 @@
+---
+- name: Aprovisionamiento y Despliegue Automatizado de AdminProyectos
+  hosts: devops_servers
+  become: yes
+  vars:
+    project_repo: "https://github.com/PaolaLpez/Unidad-2.git"
+    app_directory: "/opt/admin-proyectos"
+
+  tasks:
+    - name: Actualizar repositorios APT
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Instalar dependencias esenciales
+      apt:
+        name:
+          - git
+          - curl
+          - docker.io
+          - docker-compose
+          - openjdk-21-jdk
+        state: present
+
+    - name: Asegurar que el servicio Docker este activo y habilitado
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Clonar o sincronizar repositorio del proyecto
+      git:
+        repo: "{{ project_repo }}"
+        dest: "{{ app_directory }}"
+        version: main
+        force: yes
+
+    - name: Desplegar contenedores con Docker Compose
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}/admin-proyectos"
+        state: present
+        build: yes
+      register: compose_output
+
+    - name: Verificar estado de los servicios
+      debug:
+        msg: "Servicios desplegados correctamente en el host cloud."
