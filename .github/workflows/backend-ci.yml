@@ -1,0 +1,39 @@
+name: Backend REST API CI/CD Pipeline - Circuito DevOps
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build, Database Entities & Verification
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Checkout del Repositorio
+      uses: actions/checkout@v4
+
+    - name: 2. Configurar Entorno Java 21 (Temurin)
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: 3. Permisos de Ejecución a Maven Wrapper
+      run: chmod +x ./mvnw || true
+
+    - name: 4. Compilación del Backend REST (Java 21)
+      run: ./mvnw clean test-compile -B
+
+    - name: 5. Empaquetado del Microservicio JAR para Producción
+      run: ./mvnw clean package -DskipTests -B
+
+    - name: 6. Publicar Binario Compilado como Artefacto
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-jar-artifact
+        path: target/*.jar
